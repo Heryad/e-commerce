@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/src/context/LanguageContext';
 
@@ -37,7 +37,7 @@ interface FilterState {
     search: string;
 }
 
-export default function ProductsPage() {
+function ProductsPageContent() {
     const { language, t } = useLanguage();
     const searchParams = useSearchParams();
     const category = searchParams.get('category');
@@ -490,5 +490,17 @@ export default function ProductsPage() {
                 onClose={() => setIsQuickViewOpen(false)}
             />
         </div>
+    );
+}
+
+export default function ProductsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+            </div>
+        }>
+            <ProductsPageContent />
+        </Suspense>
     );
 }
