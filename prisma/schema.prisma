@@ -1,0 +1,124 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        Json      // { en: "Gaming", ar: "..." }
+  slug        String    @unique
+  image       String?
+  sorting     Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Company {
+  id          String    @id @default(cuid())
+  name        Json
+  slug        String    @unique
+  image       String?
+  sorting     Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+
+  @@map("companies")
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  name            Json
+  description     Json?
+  features        String[] // Array of strings
+  rating          Float    @default(0)
+  images          String[]
+  price           Decimal  @db.Decimal(10, 2)
+  
+  // Discount logic
+  discountType    DiscountType @default(NONE)
+  discountValue   Decimal      @default(0) @db.Decimal(10, 2) // Could be percent or fixed amount
+  
+  maxQuantity     Int      @default(100)
+  isAvailable     Boolean  @default(true)
+  
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id])
+  
+  companyId       String?
+  company         Company? @relation(fields: [companyId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  orderItems      OrderItem[]
+
+  @@map("products")
+}
+
+enum DiscountType {
+  NONE
+  PERCENTAGE
+  FIXED
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderKey        String      @unique // Human readable e.g. ORD-1234
+  
+  // Customer Info
+  username        String
+  phone           String
+  email           String?
+  address         String      // Full address string or JSON
+  
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  
+  status          OrderStatus @default(PENDING)
+  paymentMode     PaymentMode @default(CASH)
+  
+  items           OrderItem[]
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  quantity    Int
+  price       Decimal  @db.Decimal(10, 2) // Price at time of purchase
+  
+  @@map("order_items")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMode {
+  CASH
+  CREDIT_CARD
+  TABBY
+}
