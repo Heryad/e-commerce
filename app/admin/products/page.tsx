@@ -66,7 +66,7 @@ export default async function ProductsPage() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 font-medium text-gray-900">
-                                        ${Number(product.price).toFixed(2)}
+                                        AED {Number(product.price).toFixed(2)}
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">

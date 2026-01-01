@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, MapPin, Phone, Mail, User, Calendar, CreditCard } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { updateOrderStatus } from '../actions';
+import StatusSelect from '../StatusSelect';
 
 export default async function OrderDetailsPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -78,21 +79,13 @@ export default async function OrderDetailsPage(props: { params: Promise<{ id: st
                     {/* Status Card */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <h3 className="font-semibold text-gray-900 mb-4">Order Status</h3>
-                        <form action={updateOrderStatus.bind(null, order.id)}>
-                            <select
-                                name="status"
-                                defaultValue={order.status}
-                                onChange={(e) => e.target.form?.requestSubmit()} // Auto submit on change
-                                className="w-full p-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-                            >
-                                <option value="PENDING">Pending</option>
-                                <option value="CONFIRMED">Confirmed</option>
-                                <option value="SHIPPED">Shipped</option>
-                                <option value="DELIVERED">Delivered</option>
-                                <option value="CANCELLED">Cancelled</option>
-                            </select>
-                            <p className="text-xs text-center text-gray-400 mt-2">Change status to update order</p>
-                        </form>
+                        <StatusSelect
+                            orderId={order.id}
+                            currentStatus={order.status}
+                            updateAction={updateOrderStatus}
+                            className="w-full p-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                        />
+                        <p className="text-xs text-center text-gray-400 mt-2">Change status to update order</p>
                     </div>
 
                     {/* Customer Details */}

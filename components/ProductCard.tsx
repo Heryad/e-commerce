@@ -1,9 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { Heart, Eye, ShoppingCart, Star, Sparkles } from 'lucide-react';
+import { Heart, Eye, ShoppingCart, Star, Sparkles, Check } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { useCart } from '@/src/context/CartContext';
 
 
 interface ProductCardProps {
@@ -40,14 +41,31 @@ export default function ProductCard({
     onQuickView,
 }: ProductCardProps) {
     const { language, t } = useLanguage();
+    const { addToCart } = useCart();
     const [isHovered, setIsHovered] = useState(false);
     const [isWishlisted, setIsWishlisted] = useState(false);
+    const [isAdded, setIsAdded] = useState(false);
 
     const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
 
     const handleQuickView = (e: React.MouseEvent) => {
         e.stopPropagation();
         onQuickView?.();
+    };
+
+    const handleAddToCart = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        addToCart({
+            id,
+            name,
+            nameAr,
+            price,
+            image,
+            category
+        });
+
+        setIsAdded(true);
+        setTimeout(() => setIsAdded(false), 2000);
     };
 
     return (
@@ -119,73 +137,40 @@ export default function ProductCard({
                     <button
                         onClick={handleQuickView}
                         aria-label="Quick view product"
-                        className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-gray-700 hover:bg-amber-500 hover:text-white transition-colors duration-150"
+                        className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-gray-700 hover:bg-zinc-950 hover:text-white transition-colors duration-150"
                     >
                         <Eye className="w-3.5 h-3.5" />
                     </button>
 
+                    {/* Add to cart */}
+                    <button
+                        onClick={handleAddToCart}
+                        aria-label={isAdded ? "Added to cart" : "Add to cart"}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${isAdded ? 'bg-green-500 text-white' : 'bg-amber-500 text-white hover:bg-amber-600'
+                            }`}
+                    >
+                        {isAdded ? <Check className="w-3.5 h-3.5" /> : <ShoppingCart className="w-3.5 h-3.5" />}
+                    </button>
                 </div>
             </div>
 
             {/* Product info - Gray background */}
-            <div className="p-3 bg-gray-50">
-                {/* Category */}
-                {category && (
-                    <span className="text-[9px] font-medium text-amber-600 uppercase tracking-wider">
-                        {category}
-                    </span>
-                )}
-
+            <div className="p-3 bg-gray-50 text-center">
                 {/* Product name */}
                 <h3 className="text-xs font-semibold text-gray-900 mt-1 mb-1.5 line-clamp-2 leading-tight group-hover:text-amber-600 transition-colors duration-150">
                     {language === 'ar' && nameAr ? nameAr : name}
                 </h3>
 
-                {/* Rating */}
-                <div className="flex items-center gap-1 mb-2">
-                    <div className="flex items-center" aria-label={`Rating: ${rating} out of 5 stars`}>
-                        {[...Array(5)].map((_, i) => (
-                            <Star
-                                key={i}
-                                className={`w-2.5 h-2.5 ${i < Math.floor(rating)
-                                    ? 'fill-amber-400 text-amber-400'
-                                    : 'fill-gray-200 text-gray-200'
-                                    }`}
-                            />
-                        ))}
-                    </div>
-                    <span className="text-[10px] text-gray-500">({rating})</span>
-                </div>
-
-                {/* Color variants */}
-                {colors && colors.length > 0 && (
-                    <div className="flex items-center gap-1 mb-2">
-                        {colors.slice(0, 4).map((color, idx) => (
-                            <span
-                                key={idx}
-                                className="w-3 h-3 rounded-full border border-gray-200"
-                                style={{ backgroundColor: color }}
-                                aria-label={`Color option ${idx + 1}`}
-                            />
-                        ))}
-                        {colors.length > 4 && (
-                            <span className="text-[10px] text-gray-400">+{colors.length - 4}</span>
-                        )}
-                    </div>
-                )}
-
                 {/* Price */}
-                <div className="flex items-end justify-between">
-                    <div className="flex items-baseline gap-1.5">
-                        <span className="text-sm font-bold text-gray-900">
-                            {language === 'ar' ? `درهم ${price.toLocaleString()}` : `AED ${price.toLocaleString()}`}
+                <div className="flex flex-col items-center">
+                    <span className="text-sm font-bold text-zinc-950">
+                        {language === 'ar' ? `درهم ${price.toLocaleString()}` : `AED ${price.toLocaleString()}`}
+                    </span>
+                    {originalPrice && (
+                        <span className="text-[10px] text-gray-400 line-through">
+                            {language === 'ar' ? `درهم ${originalPrice.toLocaleString()}` : `AED ${originalPrice.toLocaleString()}`}
                         </span>
-                        {originalPrice && (
-                            <span className="text-[10px] text-gray-400 line-through">
-                                {language === 'ar' ? `درهم ${originalPrice.toLocaleString()}` : `AED ${originalPrice.toLocaleString()}`}
-                            </span>
-                        )}
-                    </div>
+                    )}
                 </div>
             </div>
         </div>

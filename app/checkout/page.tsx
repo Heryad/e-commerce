@@ -6,30 +6,71 @@ import { ArrowLeft, ArrowRight, CreditCard, Truck, ShieldCheck, CheckCircle2, Ma
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { useCart } from '@/src/context/CartContext';
+import { createOrder } from './actions';
 
 export default function CheckoutPage() {
     const { language, t } = useLanguage();
+    const { cartItems, cartSubtotal, clearCart } = useCart();
     const [paymentMethod, setPaymentMethod] = useState<'card' | 'cod'>('card');
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [createdOrder, setCreatedOrder] = useState<any>(null);
+    const [isCopied, setIsCopied] = useState(false);
 
-    // Mock cart data (should ideally come from a central state)
-    const cartItems = [
-        { id: 'iphone-15-pro', name: 'iPhone 15 Pro', nameAr: 'آيفون 15 برو', price: 4299, quantity: 1 },
-        { id: 'airpods-pro-2', name: 'AirPods Pro (2nd Gen)', nameAr: 'أيربودز برو (الجيل الثاني)', price: 949, quantity: 2 }
-    ];
+    const handleCopyId = () => {
+        if (!createdOrder?.orderKey) return;
+        navigator.clipboard.writeText(createdOrder.orderKey);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
 
-    const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const shipping = subtotal > 200 ? 0 : 20;
-    const vat = Math.round(subtotal * 0.05);
-    const total = subtotal + shipping;
+    const shipping = cartSubtotal > 200 || cartItems.length === 0 ? 0 : 20;
+    const vat = Math.round(cartSubtotal * 0.05);
+    const total = cartSubtotal + shipping;
 
     const formatCurrency = (amount: number) => {
         return language === 'ar' ? `درهم ${amount.toLocaleString()}` : `AED ${amount.toLocaleString()}`;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setIsSubmitted(true);
+        if (cartItems.length === 0) return;
+
+        setIsSubmitting(true);
+
+        const formData = new FormData(e.currentTarget);
+        const name = formData.get('fullName') as string;
+        const email = formData.get('emailAddress') as string;
+        const phone = formData.get('phoneNumber') as string;
+        const street = formData.get('streetAddress') as string;
+        const city = formData.get('city') as string;
+        const state = formData.get('state') as string;
+
+        const address = `${street}, ${city}, ${state}`;
+
+        const result = await createOrder({
+            username: name,
+            phone,
+            email,
+            address,
+            totalAmount: total,
+            paymentMode: paymentMethod === 'card' ? 'CREDIT_CARD' : 'CASH',
+            items: cartItems.map(item => ({
+                productId: item.id,
+                quantity: item.quantity,
+                price: item.price
+            }))
+        });
+
+        if (result.success) {
+            setCreatedOrder(result.order);
+            setIsSubmitted(true);
+            clearCart();
+        } else {
+            alert(t('errorOccurred' as any) || 'Failed to place order. Products might not exist in the database.');
+        }
+        setIsSubmitting(false);
     };
 
     if (isSubmitted) {
@@ -44,20 +85,58 @@ export default function CheckoutPage() {
                     >
                         <CheckCircle2 className="w-12 h-12" />
                     </motion.div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                        {language === 'ar' ? 'شكراً لطلبك!' : 'Thank you for your order!'}
+                    <h1 className="text-4xl font-black text-zinc-900 mb-4 tracking-tight">
+                        {language === 'ar' ? 'شكراً لطلبك!' : 'Thank You for Your Order!'}
                     </h1>
                     <p className="text-gray-500 mb-8 max-w-md">
                         {language === 'ar'
                             ? 'تم استلام طلبك بنجاح. سنقوم بإرسال رسالة تأكيد إلى بريدك الإلكتروني قريباً.'
                             : 'Your order has been placed successfully. We have sent a confirmation email to your inbox.'}
                     </p>
-                    <Link
-                        href="/"
-                        className="bg-zinc-950 text-white px-8 py-4 rounded-xl font-bold hover:bg-zinc-800 transition-colors"
-                    >
-                        {language === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
-                    </Link>
+
+                    {createdOrder && (
+                        <div className="bg-zinc-50 rounded-2xl p-6 mb-8 w-full max-w-sm border border-zinc-100">
+                            <p className="text-xs uppercase tracking-widest text-zinc-400 font-bold mb-2">
+                                {(t as any)('orderNumber')}
+                            </p>
+                            <div className="flex items-center justify-center gap-3">
+                                <span className="text-xl font-mono font-black text-zinc-900">
+                                    {createdOrder.orderKey}
+                                </span>
+                                <button
+                                    onClick={handleCopyId}
+                                    className="p-2 hover:bg-zinc-200 rounded-lg transition-colors relative"
+                                    title={(t as any)('copyId')}
+                                >
+                                    {isCopied ? (
+                                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                    ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+                                    )}
+                                    {isCopied && (
+                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[10px] py-1 px-2 rounded font-bold">
+                                            {(t as any)('copied')}
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <Link
+                            href="/"
+                            className="bg-zinc-950 text-white px-8 py-4 rounded-xl font-bold hover:bg-zinc-800 transition-colors"
+                        >
+                            {language === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
+                        </Link>
+                        <Link
+                            href="/track-order"
+                            className="bg-white text-zinc-950 border-2 border-zinc-950 px-8 py-4 rounded-xl font-bold hover:bg-zinc-50 transition-colors"
+                        >
+                            {(t as any)('trackOrder')}
+                        </Link>
+                    </div>
                 </div>
             </div>
         );
@@ -95,37 +174,37 @@ export default function CheckoutPage() {
                                     <label className="text-sm font-medium text-gray-700">{t('fullName')}</label>
                                     <div className="relative">
                                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                        <input required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="John Doe" />
+                                        <input name="fullName" required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="John Doe" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">{t('emailAddress')}</label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                        <input required type="email" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="john@example.com" />
+                                        <input name="emailAddress" required type="email" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="john@example.com" />
                                     </div>
                                 </div>
                                 <div className="space-y-2 sm:col-span-2">
                                     <label className="text-sm font-medium text-gray-700">{t('phoneNumber')}</label>
                                     <div className="relative">
                                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                        <input required type="tel" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="+971 -- --- ----" />
+                                        <input name="phoneNumber" required type="tel" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="+971 -- --- ----" />
                                     </div>
                                 </div>
                                 <div className="space-y-2 sm:col-span-2">
                                     <label className="text-sm font-medium text-gray-700">{t('streetAddress')}</label>
                                     <div className="relative">
                                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                        <input required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Apartment, Street Name" />
+                                        <input name="streetAddress" required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Apartment, Street Name" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">{t('city')}</label>
-                                    <input required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Dubai" />
+                                    <input name="city" required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Dubai" />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">{t('state')}</label>
-                                    <input required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Dubai" />
+                                    <input name="state" required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Dubai" />
                                 </div>
                             </div>
                         </section>
@@ -202,7 +281,7 @@ export default function CheckoutPage() {
                                 {cartItems.map((item) => (
                                     <div key={item.id} className="flex gap-4 items-center">
                                         <div className="w-12 h-12 bg-gray-50 rounded-lg flex-shrink-0 border border-gray-100 flex items-center justify-center p-1">
-                                            <img src={`https://pimcdn.sharafdg.com/cdn-cgi/image/width=300,height=300,fit=pad/images/iphone_15_pro_natural_titanium_1?1694600215`} alt="" className="w-full h-full object-contain" />
+                                            <img src={item.image} alt="" className="w-full h-full object-contain" />
                                         </div>
                                         <div className="flex-grow min-w-0">
                                             <p className="text-sm font-bold text-gray-900 truncate">{language === 'ar' ? item.nameAr : item.name}</p>
@@ -216,7 +295,7 @@ export default function CheckoutPage() {
                             <div className="space-y-4 border-t border-gray-100 pt-6 mb-8">
                                 <div className="flex justify-between text-gray-600 text-sm">
                                     <span>{t('subtotal')}</span>
-                                    <span>{formatCurrency(subtotal)}</span>
+                                    <span>{formatCurrency(cartSubtotal)}</span>
                                 </div>
                                 <div className="flex justify-between text-gray-600 text-sm">
                                     <span>{t('shipping')}</span>
@@ -234,10 +313,15 @@ export default function CheckoutPage() {
 
                             <button
                                 type="submit"
-                                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                disabled={isSubmitting || cartItems.length === 0}
+                                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <ShieldCheck className="w-5 h-5" />
-                                {t('placeOrder')}
+                                {isSubmitting ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <ShieldCheck className="w-5 h-5" />
+                                )}
+                                {isSubmitting ? (language === 'ar' ? 'جاري المعالجة...' : 'Processing...') : t('placeOrder')}
                             </button>
 
                             <p className="text-center text-[10px] text-gray-400 mt-4 px-4 leading-relaxed">

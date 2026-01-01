@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, Heart, Minus, Plus, ShoppingCart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Heart, Minus, Plus, ShoppingCart, Star, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { useCart } from '@/src/context/CartContext';
 
 
 interface Product {
@@ -18,6 +19,7 @@ interface Product {
     reviews: number;
     colors?: string[];
     description?: string;
+    category?: string;
 }
 
 interface QuickViewModalProps {
@@ -32,10 +34,12 @@ interface QuickViewModalProps {
  */
 export default function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps) {
     const { language, t } = useLanguage();
+    const { addToCart } = useCart();
     const [currentImage, setCurrentImage] = useState(0);
     const [selectedColor, setSelectedColor] = useState(0);
     const [quantity, setQuantity] = useState(1);
     const [isWishlisted, setIsWishlisted] = useState(false);
+    const [isAdded, setIsAdded] = useState(false);
     const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -221,10 +225,40 @@ export default function QuickViewModal({ product, isOpen, onClose }: QuickViewMo
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3.5 rounded-full font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-amber-500/30 transition-shadow"
+                                        onClick={() => {
+                                            if (product) {
+                                                addToCart({
+                                                    id: product.id,
+                                                    name: product.name,
+                                                    nameAr: product.nameAr,
+                                                    price: product.price,
+                                                    image: product.images[0],
+                                                    category: product.category
+                                                }, quantity);
+
+                                                setIsAdded(true);
+                                                setTimeout(() => {
+                                                    setIsAdded(false);
+                                                    onClose();
+                                                }, 1500);
+                                            }
+                                        }}
+                                        className={`flex-1 py-3.5 rounded-full font-semibold flex items-center justify-center gap-2 transition-all duration-300 ${isAdded
+                                            ? 'bg-green-500 text-white shadow-lg shadow-green-500/30'
+                                            : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-lg hover:shadow-amber-500/30'
+                                            }`}
                                     >
-                                        <ShoppingCart className="w-5 h-5 rtl:scale-x-[-1]" />
-                                        {t('addToCart')}
+                                        {isAdded ? (
+                                            <>
+                                                <Check className="w-5 h-5" />
+                                                {t('added')}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ShoppingCart className="w-5 h-5 rtl:scale-x-[-1]" />
+                                                {t('addToCart')}
+                                            </>
+                                        )}
                                     </motion.button>
                                     <motion.button
                                         whileHover={{ scale: 1.1 }}

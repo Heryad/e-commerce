@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/src/context/LanguageContext';
-
+import { useCart } from '@/src/context/CartContext';
 
 // Category data for mega menu
 const categories = [
@@ -29,6 +29,7 @@ const searchSuggestions = [
 export default function Navbar() {
   const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
+  const { cartCount } = useCart();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -183,11 +184,12 @@ export default function Navbar() {
               >
                 <ShoppingCart className="w-5 h-5" />
                 <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                  2
+                  {cartCount}
                 </span>
               </Link>
 
               <button
+                onClick={() => router.push('/track-order')}
                 aria-label="View account"
                 className="hidden sm:block transition-colors duration-150 text-zinc-400 hover:text-zinc-100"
               >
@@ -296,7 +298,7 @@ export default function Navbar() {
                     <span className="font-medium">{t('cart')}</span>
                   </div>
                   <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-medium">
-                    2
+                    {cartCount}
                   </span>
                 </Link>
               </div>

@@ -7,60 +7,15 @@ import { Minus, Plus, Trash2, ArrowRight, ArrowLeft, ShoppingBag } from 'lucide-
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import { useLanguage } from '@/src/context/LanguageContext';
-
-interface CartItem {
-    id: string;
-    name: string;
-    nameAr: string;
-    price: number;
-    image: string;
-    quantity: number;
-    category: string;
-}
+import { useCart } from '@/src/context/CartContext';
 
 export default function CartPage() {
     const { language, t } = useLanguage();
+    const { cartItems, updateQuantity, removeFromCart, cartSubtotal } = useCart();
 
-    // Mock cart data
-    const [cartItems, setCartItems] = useState<CartItem[]>([
-        {
-            id: 'iphone-15-pro',
-            name: 'iPhone 15 Pro',
-            nameAr: 'آيفون 15 برو',
-            price: 4299,
-            image: 'https://pimcdn.sharafdg.com/cdn-cgi/image/width=300,height=300,fit=pad/images/iphone_15_pro_natural_titanium_1?1694600215',
-            quantity: 1,
-            category: 'Phones'
-        },
-        {
-            id: 'airpods-pro-2',
-            name: 'AirPods Pro (2nd Gen)',
-            nameAr: 'أيربودز برو (الجيل الثاني)',
-            price: 949,
-            image: 'https://pimcdn.sharafdg.com/cdn-cgi/image/width=300,height=300,fit=pad/images/S000394523_1?1760533220',
-            quantity: 2,
-            category: 'Audio'
-        }
-    ]);
-
-    const updateQuantity = (id: string, delta: number) => {
-        setCartItems(items =>
-            items.map(item =>
-                item.id === id
-                    ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-                    : item
-            )
-        );
-    };
-
-    const removeItem = (id: string) => {
-        setCartItems(items => items.filter(item => item.id !== id));
-    };
-
-    const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const shipping = subtotal > 200 ? 0 : 20;
-    const vat = Math.round(subtotal * 0.05); // 5% VAT
-    const total = subtotal + shipping;
+    const shipping = cartSubtotal > 200 || cartItems.length === 0 ? 0 : 20;
+    const vat = Math.round(cartSubtotal * 0.05); // 5% VAT
+    const total = cartSubtotal + shipping;
 
     const formatCurrency = (amount: number) => {
         return language === 'ar' ? `درهم ${amount.toLocaleString()}` : `AED ${amount.toLocaleString()}`;
@@ -120,7 +75,7 @@ export default function CartPage() {
                                                     </p>
                                                 </div>
                                                 <button
-                                                    onClick={() => removeItem(item.id)}
+                                                    onClick={() => removeFromCart(item.id)}
                                                     className="text-gray-400 hover:text-red-500 transition-colors p-1"
                                                     title={t('remove')}
                                                 >
@@ -131,14 +86,14 @@ export default function CartPage() {
                                             <div className="flex flex-wrap items-center justify-between gap-4">
                                                 <div className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-lg p-1">
                                                     <button
-                                                        onClick={() => updateQuantity(item.id, -1)}
+                                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                                         className="w-8 h-8 rounded-md flex items-center justify-center text-gray-500 hover:bg-white hover:text-amber-600 transition-all shadow-sm"
                                                     >
                                                         <Minus className="w-4 h-4" />
                                                     </button>
                                                     <span className="w-8 text-center font-bold text-gray-900">{item.quantity}</span>
                                                     <button
-                                                        onClick={() => updateQuantity(item.id, 1)}
+                                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                                         className="w-8 h-8 rounded-md flex items-center justify-center text-gray-500 hover:bg-white hover:text-amber-600 transition-all shadow-sm"
                                                     >
                                                         <Plus className="w-4 h-4" />
@@ -169,7 +124,7 @@ export default function CartPage() {
                                 <div className="space-y-4 mb-6">
                                     <div className="flex justify-between text-gray-600">
                                         <span>{t('subtotal')}</span>
-                                        <span className="font-medium">{formatCurrency(subtotal)}</span>
+                                        <span className="font-medium">{formatCurrency(cartSubtotal)}</span>
                                     </div>
                                     <div className="flex justify-between text-gray-600">
                                         <span>{t('shipping')}</span>

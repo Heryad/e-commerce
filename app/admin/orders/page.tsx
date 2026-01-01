@@ -3,6 +3,7 @@ import { prisma } from '@/src/lib/prisma';
 import Link from 'next/link';
 import { updateOrderStatus } from './actions';
 import { OrderStatus } from '@prisma/client';
+import StatusSelect from './StatusSelect';
 
 export default async function OrdersPage() {
     let orders: any[] = [];
@@ -51,25 +52,11 @@ export default async function OrdersPage() {
                                     ${Number(order.totalAmount).toFixed(2)}
                                 </td>
                                 <td className="px-6 py-4">
-                                    <form action={updateOrderStatus.bind(null, order.id)}>
-                                        <select
-                                            name="status"
-                                            defaultValue={order.status}
-                                            onChange={(e) => e.target.form?.requestSubmit()}
-                                            className={`px-2 py-1 rounded text-xs font-semibold border-none cursor-pointer
-                        ${order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : ''}
-                        ${order.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' : ''}
-                        ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' : ''}
-                        ${order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' : ''}
-                      `}
-                                        >
-                                            <option value="PENDING">Pending</option>
-                                            <option value="CONFIRMED">Confirmed</option>
-                                            <option value="SHIPPED">Shipped</option>
-                                            <option value="DELIVERED">Delivered</option>
-                                            <option value="CANCELLED">Cancelled</option>
-                                        </select>
-                                    </form>
+                                    <StatusSelect
+                                        orderId={order.id}
+                                        currentStatus={order.status}
+                                        updateAction={updateOrderStatus}
+                                    />
                                 </td>
                                 <td className="px-6 py-4 text-xs text-gray-500">
                                     {new Date(order.createdAt).toLocaleDateString()}
