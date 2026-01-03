@@ -22,7 +22,7 @@ interface Product {
     description?: string;
 }
 
-interface IPhoneProduct {
+interface SmartphoneProduct {
     objectID: string;
     post_title: string;
     post_title_ar?: string;
@@ -55,12 +55,12 @@ interface Category {
 }
 
 interface HomeClientProps {
-    products: IPhoneProduct[];
-    usedIphones: IPhoneProduct[];
+    products: SmartphoneProduct[];
+    usedSmartphones: SmartphoneProduct[];
     categories: Category[];
 }
 
-export default function HomeClient({ products, usedIphones, categories }: HomeClientProps) {
+export default function HomeClient({ products, usedSmartphones, categories }: HomeClientProps) {
     const { language, t } = useLanguage();
     const [currentSlide, setCurrentSlide] = useState(0);
     const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -90,7 +90,7 @@ export default function HomeClient({ products, usedIphones, categories }: HomeCl
         },
     ];
 
-    const openQuickView = (product: IPhoneProduct) => {
+    const openQuickView = (product: SmartphoneProduct) => {
         setQuickViewProduct({
             id: product.objectID,
             name: product.post_title,
@@ -183,7 +183,7 @@ export default function HomeClient({ products, usedIphones, categories }: HomeCl
                                     </p>
                                     <div className="flex flex-wrap gap-4">
                                         <Link
-                                            href="/products?category=iphones"
+                                            href="/products?category=smartphones"
                                             className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-8 py-3.5 rounded-full font-semibold shadow-lg hover:shadow-amber-500/25 transition-shadow duration-200 inline-flex items-center gap-2"
                                         >
                                             {slide.buttonText}
@@ -293,7 +293,7 @@ export default function HomeClient({ products, usedIphones, categories }: HomeCl
                             <p className="text-sm text-gray-500">{t('topRated')}</p>
                         </div>
                     </div>
-                    <Link href="/products?category=iphones" className="text-sm text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1">
+                    <Link href="/products?category=smartphones" className="text-sm text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1">
                         {t('viewAll')}
                         <ChevronRight className="w-4 h-4 rtl:rotate-180" />
                     </Link>
@@ -339,7 +339,7 @@ export default function HomeClient({ products, usedIphones, categories }: HomeCl
             </section>
 
             {/* Used iPhones Section */}
-            {usedIphones.length > 0 && (
+            {usedSmartphones.length > 0 && (
                 <section className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12">
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-8 sm:p-10">
                         <div className="flex items-center justify-between mb-8">
@@ -349,7 +349,7 @@ export default function HomeClient({ products, usedIphones, categories }: HomeCl
                                 </div>
                                 <div>
                                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                                        {language === 'ar' ? 'آيفونات مستعملة' : 'Used iPhones'}
+                                        {language === 'ar' ? 'هواتف ذكية مستعملة' : 'Used Smartphones'}
                                     </h2>
                                     <p className="text-sm text-gray-600">
                                         {language === 'ar' ? 'أجهزة مجددة بأسعار رائعة' : 'Refurbished devices at great prices'}
@@ -357,7 +357,7 @@ export default function HomeClient({ products, usedIphones, categories }: HomeCl
                                 </div>
                             </div>
                             <Link
-                                href="/products?category=used-iphones"
+                                href="/products?category=used-smartphones"
                                 className="text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-1"
                             >
                                 {t('viewAll')}
@@ -366,7 +366,7 @@ export default function HomeClient({ products, usedIphones, categories }: HomeCl
                         </div>
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                            {usedIphones.slice(0, 8).map((product) => (
+                            {usedSmartphones.slice(0, 8).map((product) => (
                                 <ProductCard
                                     key={product.objectID}
                                     id={product.objectID}
@@ -398,7 +398,7 @@ export default function HomeClient({ products, usedIphones, categories }: HomeCl
                                 <p className="text-sm text-gray-500">{t('hero1Subtitle')}</p>
                             </div>
                         </div>
-                        <Link href="/products?category=iphones" className="text-sm text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1">
+                        <Link href="/products?category=smartphones" className="text-sm text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1">
                             {t('viewAll')}
                             <ChevronRight className="w-4 h-4 rtl:rotate-180" />
                         </Link>
@@ -435,7 +435,7 @@ export default function HomeClient({ products, usedIphones, categories }: HomeCl
                             <p className="text-sm text-gray-500">{t('topRated')}</p>
                         </div>
                     </div>
-                    <Link href="/products?category=iphones" className="text-sm text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1">
+                    <Link href="/products?category=smartphones" className="text-sm text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1">
                         {t('viewAll')}
                         <ChevronRight className="w-4 h-4 rtl:rotate-180" />
                     </Link>

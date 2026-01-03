@@ -33,12 +33,12 @@ export default async function Home() {
   });
 
   // Separate Used iPhones from other products
-  const usedIphones = allProducts.filter(
-    (product) => product.category.slug === 'used-iphones'
+  const usedSmartphones = allProducts.filter(
+    (product) => product.category.slug === 'used-smartphones'
   );
 
   const regularProducts = allProducts.filter(
-    (product) => product.category.slug !== 'used-iphones'
+    (product) => product.category.slug !== 'used-smartphones'
   );
 
   // Transform products to match the expected format
@@ -81,7 +81,7 @@ export default async function Home() {
     }));
 
   const transformedProducts = transformProducts(regularProducts);
-  const transformedUsedIphones = transformProducts(usedIphones);
+  const transformedUsedSmartphones = transformProducts(usedSmartphones);
 
   // Transform categories
   const transformedCategories = categoriesFromDb.map((category) => ({
@@ -104,7 +104,7 @@ export default async function Home() {
       <Navbar />
       <HomeClient
         products={transformedProducts}
-        usedIphones={transformedUsedIphones}
+        usedSmartphones={transformedUsedSmartphones}
         categories={transformedCategories}
       />
     </div>

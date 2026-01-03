@@ -18,13 +18,13 @@ export const categories = [
         href: '/products?category=tablets'
     },
     {
-        id: 'iphones',
+        id: 'smartphones',
         name: 'Phones',
         nameAr: 'الهواتف',
-        description: 'Latest iPhone models & accessories',
-        descriptionAr: 'أحدث موديلات آيفون والملحقات',
+        description: 'Latest smartphone models & accessories',
+        descriptionAr: 'أحدث موديلات الهواتف الذكية والملحقات',
         image: 'https://pimcdn.sharafdg.com/cdn-cgi/image/width=300,height=300,fit=pad/images/iphone_16_pro_max_desert_titanium_1?1726127643',
-        href: '/products?category=iphones'
+        href: '/products?category=smartphones'
     },
     {
         id: 'powerbanks',
