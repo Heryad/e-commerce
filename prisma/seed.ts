@@ -25,7 +25,25 @@ async function main() {
 
         for (const hit of hits) {
             try {
-                const categoryName = hit.taxonomies?.taxonomies_hierarchical?.product_cat?.lvl1 || 'Uncategorized';
+                // Check if this is a refurbished/renewed product
+                const isRefurbished = file.includes('refurbished') ||
+                    hit.post_title?.toLowerCase().includes('renewed') ||
+                    hit.post_title?.toLowerCase().includes('refurbished') ||
+                    hit.tags?.some((tag: any) => tag.title?.toLowerCase() === 'renewed');
+
+                // Extract category - handle both structures
+                let categoryName = 'Uncategorized';
+
+                // Special handling for refurbished products
+                if (isRefurbished) {
+                    categoryName = 'Used iPhones';
+                } else if (hit.taxonomies?.taxonomies_hierarchical?.product_cat?.lvl1) {
+                    categoryName = hit.taxonomies.taxonomies_hierarchical.product_cat.lvl1;
+                } else if (hit.taxonomies?.product_cat && Array.isArray(hit.taxonomies.product_cat)) {
+                    // For other products: ["Mobiles & Tablets", "Mobiles"]
+                    categoryName = hit.taxonomies.product_cat.join(' > ');
+                }
+
                 const brandName = hit.taxonomies?.product_brand?.[0] || 'Unknown';
 
                 const categorySlug = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 190);
@@ -51,6 +69,19 @@ async function main() {
                     }
                 });
 
+                // Prepare images array - handle both single image and additional_images
+                let imagesArray: string[] = [];
+                if (Array.isArray(hit.images)) {
+                    imagesArray = hit.images;
+                } else if (hit.images) {
+                    imagesArray = [hit.images];
+                }
+                // Add additional images if they exist
+                if (hit.additional_images && Array.isArray(hit.additional_images)) {
+                    imagesArray = [...imagesArray, ...hit.additional_images];
+                }
+                imagesArray = imagesArray.filter(Boolean);
+
                 // Create Product
                 await prisma.product.upsert({
                     where: { id: String(hit.objectID) },
@@ -62,7 +93,7 @@ async function main() {
                         id: String(hit.objectID),
                         name: { en: hit.post_title, ar: hit.post_title_ar || hit.post_title },
                         price: hit.price,
-                        images: Array.isArray(hit.images) ? hit.images : [hit.images].filter(Boolean),
+                        images: imagesArray,
                         categoryId: category.id,
                         companyId: brand.id,
                         rating: hit.rating_reviews?.rating || 0,
@@ -70,6 +101,8 @@ async function main() {
                         maxQuantity: 100
                     }
                 });
+
+                console.log(`✓ Seeded: ${hit.post_title} (${hit.objectID})`);
             } catch (itemError) {
                 console.error(`Error processing item ${hit.objectID} in ${file}:`, itemError);
             }

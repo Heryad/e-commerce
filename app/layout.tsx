@@ -38,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth overflow-x-hidden">
+    <html lang="en" className="scroll-smooth overflow-x-hidden" suppressHydrationWarning={true}>
       <body
         className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-white overflow-x-hidden`}
       >

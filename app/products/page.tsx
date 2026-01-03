@@ -8,7 +8,6 @@ import Navbar from '@/components/Navbar';
 import ProductCard from '@/components/ProductCard';
 import QuickViewModal from '@/components/QuickViewModal';
 import { Filter, SlidersHorizontal, Grid, List, ChevronDown, X, Star, Search } from 'lucide-react';
-import { categories } from '@/src/data/categories';
 
 interface Product {
     objectID: string;
@@ -29,6 +28,12 @@ interface Product {
     sku: string;
 }
 
+interface Category {
+    id: string;
+    name: { en: string; ar: string };
+    slug: string;
+}
+
 interface FilterState {
     priceRange: [number, number];
     inStock: boolean;
@@ -44,6 +49,7 @@ function ProductsPageContent() {
     const search = searchParams.get('search');
 
     const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [showFilters, setShowFilters] = useState(false);
@@ -57,6 +63,22 @@ function ProductsPageContent() {
         search: search || '',
     });
 
+    // Fetch categories
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch('/api/categories');
+                const data = await response.json();
+                if (data.categories) {
+                    setCategories(data.categories);
+                }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        };
+        fetchCategories();
+    }, []);
+
     // Update search filter when URL param changes
     useEffect(() => {
         const query = searchParams.get('search') || '';
@@ -68,22 +90,43 @@ function ProductsPageContent() {
         const fetchProducts = async () => {
             setLoading(true);
             try {
+                // Build API URL with query parameters
+                const params = new URLSearchParams();
                 if (category) {
-                    const response = await fetch(`/storage/${category}.json`);
-                    const data = await response.json();
-                    const hits = data.results?.[0]?.hits || [];
-                    setProducts(hits);
+                    params.append('category', category);
+                }
+                params.append('limit', '100'); // Get more products
+
+                const response = await fetch(`/api/products?${params.toString()}`);
+                const data = await response.json();
+
+                if (data.products) {
+                    // Transform database products to match expected format
+                    const transformedProducts = data.products.map((product: any) => ({
+                        objectID: product.id,
+                        post_title: typeof product.name === 'object' && product.name !== null
+                            ? (product.name as any).en || ''
+                            : String(product.name),
+                        post_title_ar: typeof product.name === 'object' && product.name !== null
+                            ? (product.name as any).ar || undefined
+                            : undefined,
+                        price: Number(product.price),
+                        regular_price: String(product.price),
+                        sale_price: String(product.price),
+                        images: product.images[0] || '',
+                        rating_reviews: {
+                            rating: product.rating,
+                            reviews: 0,
+                        },
+                        discount: product.discountType === 'PERCENTAGE' ? Number(product.discountValue) : 0,
+                        discount_val: product.discountType === 'FIXED' ? Number(product.discountValue) : 0,
+                        in_stock: product.isAvailable ? 1 : 0,
+                        tags: [],
+                        sku: product.id,
+                    }));
+                    setProducts(transformedProducts);
                 } else {
-                    // Search in ALL categories
-                    const allCategories = ['gaming', 'tablets', 'iphones', 'powerbanks', 'cables', 'adapters'];
-                    const promises = allCategories.map(cat =>
-                        fetch(`/storage/${cat}.json`).then(res => res.json())
-                    );
-                    const results = await Promise.all(promises);
-                    const allHits = results.flatMap(data => data.results?.[0]?.hits || []);
-                    // Remove duplicates if any (based on objectID)
-                    const uniqueHits = Array.from(new Map(allHits.map(item => [item.objectID, item])).values());
-                    setProducts(uniqueHits);
+                    setProducts([]);
                 }
             } catch (error) {
                 console.error('Error fetching products:', error);
@@ -187,9 +230,15 @@ function ProductsPageContent() {
                         <div>
                             <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
                                 {category
-                                    ? (language === 'ar'
-                                        ? categories.find(c => c.id === category)?.nameAr
-                                        : categories.find(c => c.id === category)?.name) || category
+                                    ? (() => {
+                                        const cat = categories.find(c => c.slug === category);
+                                        if (cat) {
+                                            return language === 'ar'
+                                                ? (typeof cat.name === 'object' ? cat.name.ar : String(cat.name))
+                                                : (typeof cat.name === 'object' ? cat.name.en : String(cat.name));
+                                        }
+                                        return category.charAt(0).toUpperCase() + category.slice(1);
+                                    })()
                                     : t(filters.search ? 'searchResults' : 'allProducts')}
                             </h1>
                             <p className="text-zinc-400 text-sm">
